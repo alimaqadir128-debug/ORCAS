@@ -1,5 +1,8 @@
 # ORCAS: ORchard Cold-chain And Storage
 
+**Live demo:** https://orcas-10ff.onrender.com
+(Hosted on a free plan. If nobody has visited for a while, the first load can take up to a minute.)
+
 Solar-powered cold storage and cold-chain logistics control room for Kashmir's perishable produce, starting with apples.
 One product: a solar cold store with sensor-driven temperature control at the orchard, and a control room that watches every load from orchard to market across Jammu & Kashmir and Ladakh.
 
@@ -7,13 +10,13 @@ Prepared by **Alima Qadir**, SSM College of Engineering.
 
 ---
 
-## Run it (2 minutes)
+## Run it locally (2 minutes)
 
 **Windows:** double-click `start.bat`
 **Mac / Linux:** `./start.sh`
-**Or manually:** `npm start` then open http://localhost:3000
+**Or manually:** run `npm start`, then open `http://localhost:3000`
 
-Needs Node.js 18 or newer (https://nodejs.org). Dependencies are already included in this folder, so no internet is needed to start the server. The map background tiles and live weather use the internet when available; everything else works offline.
+Needs Node.js 18 or newer (https://nodejs.org). If the `node_modules` folder is missing, `start.bat` and `start.sh` install the dependencies automatically. The map background tiles and live weather use the internet when available; everything else works offline.
 
 Check that everything is healthy at any time: `npm run check`
 
@@ -21,10 +24,10 @@ Check that everything is healthy at any time: `npm run check`
 
 | Panel | What it shows |
 |---|---|
-| Control Room Overview | KPIs, live network map, fleet temperature trend, top spoilage risks, activity feed |
-| Solar Cold Store | Solar output, battery, cooling load and energy totals for each orchard store |
-| Cold Box Health | Every store and transit box: temperature, humidity, door, compressor, battery, with fault buttons for demos |
-| Cooling & Airflow | Animated fan/coil diagram, supply and return air, top/middle/bottom probes, humidity |
+| Control Room Overview | Key numbers, live network map, items needing attention, recent activity |
+| Solar Cold Store | Solar generation vs cooling load, battery level and energy totals for each orchard store |
+| Cold Box Health | Every store and transit box: temperature, humidity, battery, status, plus a demo fault bar (open door, fail compressor) |
+| Cooling & Airflow | Animated fan and coil diagram, supply and return air, top / middle / bottom readings (modelled in this prototype), humidity |
 | Spoilage Risk | Product-specific ageing model (Q10), shelf life used, estimated days left, risk score |
 | Alerts | Temperature, door, compressor, battery, spoilage and blocked-route alerts with acknowledge |
 | Route Status | J&K + Ladakh road map with open / slowed / closed status for every segment |
@@ -40,7 +43,9 @@ Products with their own spoilage models: apple, pear, cherry, walnut, saffron, t
 
 The dashboard runs a physics-based simulation (thermal model, solar curve, battery, compressor control, road events, product spoilage) so every panel is alive without hardware. The top bar says **Simulation data** for that reason.
 
-Real sensors can replace the simulation for any unit: an ESP32 node (code in `firmware/orcas_node.ino`) posts readings to `/api/ingest`. While readings keep arriving, that unit shows **Live sensor** and uses your real temperature, humidity, door and battery values. If the node goes quiet for 90 seconds it falls back to simulation automatically.
+Real sensors can replace the simulation for any unit: an ESP32 node (code in `firmware/orcas_node.ino`) posts readings to `/api/ingest`. While readings keep arriving, that unit shows **Live sensor** and uses your real temperature, humidity, door and battery values. If the node goes quiet for 90 seconds it falls back to simulation automatically. The reference firmware posts over plain `http`, so use a local run on the same Wi-Fi network for sensor demos; sending readings to the hosted `https` site needs a small firmware change.
+
+The hardware prototype is not built yet and the firmware has not been tested on physical sensors.
 
 The Waste & Impact numbers compare against **assumed** baseline losses and prices (`src/config.js`). Replace them with field-survey figures before quoting them as measured results.
 
@@ -57,21 +62,22 @@ Copy `.env.example` to `.env`. Useful settings:
 - `SIM_START_HOUR_IST=9`  hour the demo clock starts at (`auto` = real time). Use 9 to open with solar producing.
 - `SIM_MIN_PER_TICK=6`  simulated minutes per 2 second tick. Also switchable live with Slow / Normal / Fast in the top bar. Pause / Resume is there too, handy for screen recording.
 - `INGEST_KEY`  shared secret for sensor nodes.
+- `MAP_TILES`  `osm` (default), `none` (roads only, no background map) or a custom tile URL.
 - `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`  optional. Run `supabase/schema.sql` first. Reports and telemetry are then mirrored to Supabase.
 
 ## Demo flow for a screen recording
 
-1. Overview: open with the map, KPIs and fleet trend.
+1. Overview: open with the map and key numbers.
 2. Disruption Events: trigger a landslide on NH-44 (Banihal to Ramban).
 3. Route Status: the segment turns red; loads approaching it begin to hold.
 4. Reroute Assistant: pick the holding load, compare "stay" against the Mughal Road corridor, apply the better one.
-5. Cold Box Health: press Open door on a unit, watch temperature climb; Alerts panel raises it; press Clear.
+5. Cold Box Health: pick a unit in the demo fault bar and press Open door, watch temperature climb; the Alerts panel raises it; press Clear.
 6. Spoilage Risk and Solar Cold Store: show ageing factor and battery behaviour through the simulated day.
 7. Reports: generate the Delay report, download the CSV.
 
-## Deploying (Render / Railway)
+## Deploying (Render)
 
-Build command: `npm install`  Start command: `npm start`  The server reads `PORT` automatically. Add the same environment variables in the host dashboard if you use them.
+Build command: `npm install`  Start command: `npm start`  The server reads `PORT` automatically. Add the same environment variables in the host dashboard if you use them. Use a host that runs a continuous Node server; serverless platforms are not suitable because the simulation runs continuously.
 
 ## Project layout
 
